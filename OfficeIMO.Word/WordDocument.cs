@@ -31,18 +31,13 @@ namespace OfficeIMO.Word {
         public WordTableOfContent TableOfContent {
             get {
                 var sdtBlocks = _document.Body.ChildElements.OfType<SdtBlock>();
-                foreach (var sdtBlock in sdtBlocks) {
-                    if (sdtBlock != null) {
-                        var sdtProperties = sdtBlock.ChildElements.OfType<SdtProperties>().FirstOrDefault();
-                        if (sdtProperties != null) {
-                            var docPartObject = sdtProperties.ChildElements.OfType<SdtContentDocPartObject>().FirstOrDefault();
-                            if (docPartObject != null) {
-                                var docPartGallery = docPartObject.ChildElements.OfType<DocPartGallery>().FirstOrDefault();
-                                if (docPartGallery != null && docPartGallery.Val == "Table of Contents") {
-                                    return new WordTableOfContent(this, sdtBlock);
-                                }
-                            }
-                        }
+                foreach (var sdtBlock in sdtBlocks.Where(s => s != null)) {
+                    var sdtProperties = sdtBlock.ChildElements.OfType<SdtProperties>().FirstOrDefault();
+                    var docPartObject = sdtProperties?.ChildElements.OfType<SdtContentDocPartObject>().FirstOrDefault();
+                    var docPartGallery = docPartObject?.ChildElements.OfType<DocPartGallery>().FirstOrDefault();
+
+                    if (docPartGallery != null && docPartGallery.Val == "Table of Contents") {
+                        return new WordTableOfContent(this, sdtBlock);
                     }
                 }
 
@@ -53,18 +48,13 @@ namespace OfficeIMO.Word {
         public WordCoverPage CoverPage {
             get {
                 var sdtBlocks = _document.Body.ChildElements.OfType<SdtBlock>();
-                foreach (var sdtBlock in sdtBlocks) {
-                    if (sdtBlock != null) {
-                        var sdtProperties = sdtBlock.ChildElements.OfType<SdtProperties>().FirstOrDefault();
-                        if (sdtProperties != null) {
-                            var docPartObject = sdtProperties.ChildElements.OfType<SdtContentDocPartObject>().FirstOrDefault();
-                            if (docPartObject != null) {
-                                var docPartGallery = docPartObject.ChildElements.OfType<DocPartGallery>().FirstOrDefault();
-                                if (docPartGallery != null && docPartGallery.Val == "Cover Pages") {
-                                    return new WordCoverPage(this, sdtBlock);
-                                }
-                            }
-                        }
+                foreach (var sdtBlock in sdtBlocks.Where(s => s != null)) {
+                    var sdtProperties = sdtBlock.ChildElements.OfType<SdtProperties>().FirstOrDefault();
+                    var docPartObject = sdtProperties?.ChildElements.OfType<SdtContentDocPartObject>().FirstOrDefault();
+                    var docPartGallery = docPartObject?.ChildElements.OfType<DocPartGallery>().FirstOrDefault();
+                    
+                    if (docPartGallery != null && docPartGallery.Val == "Cover Pages") {
+                        return new WordCoverPage(this, sdtBlock);
                     }
                 }
 
@@ -88,17 +78,6 @@ namespace OfficeIMO.Word {
                 List<WordParagraph> list = new List<WordParagraph>();
                 foreach (var section in this.Sections) {
                     list.AddRange(section.ParagraphsPageBreaks);
-                }
-
-                return list;
-            }
-        }
-
-        public List<WordParagraph> ParagraphsBreaks {
-            get {
-                List<WordParagraph> list = new List<WordParagraph>();
-                foreach (var section in this.Sections) {
-                    list.AddRange(section.ParagraphsBreaks);
                 }
 
                 return list;
@@ -160,22 +139,11 @@ namespace OfficeIMO.Word {
             }
         }
 
-        public List<WordBreak> PageBreaks {
+        public List<WordPageBreak> PageBreaks {
             get {
-                List<WordBreak> list = new List<WordBreak>();
+                List<WordPageBreak> list = new List<WordPageBreak>();
                 foreach (var section in this.Sections) {
                     list.AddRange(section.PageBreaks);
-                }
-
-                return list;
-            }
-        }
-
-        public List<WordBreak> Breaks {
-            get {
-                List<WordBreak> list = new List<WordBreak>();
-                foreach (var section in this.Sections) {
-                    list.AddRange(section.Breaks);
                 }
 
                 return list;
@@ -198,9 +166,6 @@ namespace OfficeIMO.Word {
             }
         }
 
-        /// <summary>
-        /// Provides a list of Bookmarks in the document from all the sections
-        /// </summary>
         public List<WordBookmark> Bookmarks {
             get {
                 List<WordBookmark> list = new List<WordBookmark>();
@@ -212,9 +177,6 @@ namespace OfficeIMO.Word {
             }
         }
 
-        /// <summary>
-        /// Provides a list of all tables within the document from all the sections, excluding nested tables
-        /// </summary>
         public List<WordTable> Tables {
             get {
                 List<WordTable> list = new List<WordTable>();
@@ -222,19 +184,6 @@ namespace OfficeIMO.Word {
                     list.AddRange(section.Tables);
                 }
 
-                return list;
-            }
-        }
-
-        /// <summary>
-        /// Provides a list of all tables within the document from all the sections, including nested tables
-        /// </summary>
-        public List<WordTable> TablesIncludingNestedTables {
-            get {
-                List<WordTable> list = new List<WordTable>();
-                foreach (var section in this.Sections) {
-                    list.AddRange(section.TablesIncludingNestedTables);
-                }
                 return list;
             }
         }
@@ -633,6 +582,20 @@ namespace OfficeIMO.Word {
 
         public void Save(bool openWord) {
             this.Save("", openWord);
+        }
+
+        /// <summary>
+        /// Save WordDocument to given Stream and Seek to Beginning if Stream type can seek.
+        /// </summary>
+        /// <param name="outputStream"></param>
+        public void SaveToStream(Stream outputStream)
+        {
+            this._wordprocessingDocument.Clone(outputStream);
+
+            if (outputStream.CanSeek)
+            {
+                outputStream.Seek(0, SeekOrigin.Begin);
+            }
         }
 
         /// <summary>
